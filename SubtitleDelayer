@@ -42,10 +42,10 @@ def writeSRT(fileName,srt):
         print >>f, x["text"] + "\n"
     f.close()
     
-def delaySRT(srt, milli):
+def delaySRT(srt, td):
     for x in srt:
-        x["from"] += timedelta(milliseconds=milli)
-        x["to"] += timedelta(milliseconds=milli)
+        x["from"] += td
+        x["to"] += td
 
 def main():
     if len(sys.argv) != 4:
