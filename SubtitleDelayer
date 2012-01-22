@@ -1,0 +1,60 @@
+#!/usr/bin/python
+import sys
+from datetime import timedelta, datetime
+
+def parseTimeDelta(timeStr, milliSepChar=','):
+    try:
+        times = map(int,timeStr.replace(milliSepChar,":").split(":"))
+        return timedelta(hours=times[0],minutes=times[1], seconds=times[2], milliseconds=times[3])
+    except:
+        sys.exit("Invalid time format.")
+
+def timeDelaToStr(td):
+    return "%02d:%02d:%02d,%03d"%(td.seconds//3600, (td.seconds//60)%60, td.seconds%60, td.microseconds//1000)
+
+def readSRT(fileName):
+    content = str(open(fileName,'r').read())
+    content = content[content.index("1"):]
+    content = content.split('\n\n')
+    if content[-1].strip() == "":
+        del content[-1]
+    sub = []
+    
+    for x in content:
+        obj = x.split("\n")
+        temp = {}
+        temp["srno"] = obj[0]
+        times = map(parseTimeDelta, obj[1].split(" --> "))
+        temp["from"] = times[0]
+        temp["to"] = times[1]
+        temp["text"] = "\n".join(obj[2:])
+        sub.append(temp)
+    return sub
+
+def writeSRT(fileName,srt):
+    f = open(fileName,'w')
+    for x in srt:
+        print >>f, x["srno"]
+        print >>f, "%02d:%02d:%02d,%03d --> %02d:%02d:%02d,%03d"%(
+            x["from"].seconds//3600, (x["from"].seconds//60)%60, x["from"].seconds%60, x["from"].microseconds//1000,
+            x["to"].seconds//3600,   (x["to"].seconds//60)%60,   x["to"].seconds%60,   x["to"].microseconds//1000
+        )
+        print >>f, x["text"] + "\n"
+    f.close()
+    
+def delaySRT(srt, milli):
+    for x in srt:
+        x["from"] += timedelta(milliseconds=milli)
+        x["to"] += timedelta(milliseconds=milli)
+
+def main():
+    if len(sys.argv) != 4:
+        sys.exit("Invalid args.")
+    fileName = sys.argv[1]
+    sub = readSRT(fileName)
+    if sys.argv[2].lower() == "delay":
+        delaySRT(sub, parseTimeDelta(sys.argv[3],"."))
+    else:
+        delaySRT(sub, -parseTimeDelta(sys.argv[3],"."))
+    writeSRT("temp.txt",sub)
+main()
